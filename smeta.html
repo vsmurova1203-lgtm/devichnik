@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💐 Смета девичника</title>
+<style>
+  :root{
+    --bg:#fff5f7; --card:#ffffff; --ink:#3d2b33; --muted:#9b8288;
+    --rose:#e8859b; --rose-dark:#d16584; --rose-soft:#fce4ea;
+    --gold:#e5b769; --green:#5fb08a; --green-soft:#e3f4ec;
+    --red:#e06b6b; --red-soft:#fce3e3; --line:#f2dde3;
+    --shadow:0 6px 24px rgba(209,101,132,.10);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(160deg,#fff5f7,#fdeef1 60%,#faf6f0);
+    color:var(--ink); min-height:100vh; padding:28px 16px 60px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  header.top{text-align:center;margin-bottom:26px}
+  header.top h1{font-size:30px;margin:0 0 4px;font-weight:800;letter-spacing:.3px}
+  header.top .sub{color:var(--muted);font-size:14px}
+
+  .warn{background:#fff3dc;border:1px solid #f0d493;color:#9a6f18;border-radius:14px;padding:12px 16px;font-size:13.5px;margin-bottom:22px;display:flex;gap:9px;align-items:flex-start}
+  .warn b{color:#7d5810}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+  .kpi{background:var(--card);border-radius:18px;padding:18px 18px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .kpi .lbl{font-size:12.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+  .kpi .val{font-size:26px;font-weight:800;margin-top:6px}
+  .kpi .hint{font-size:12px;color:var(--muted);margin-top:3px}
+  .kpi.collected .val{color:var(--green)}
+  .kpi.spent .val{color:var(--rose-dark)}
+  .kpi.left .val{color:var(--gold)}
+  .kpi.need .val{color:var(--red)}
+  .kpi .bar-emoji{position:absolute;right:14px;top:14px;font-size:22px;opacity:.5}
+
+  .progress-card{background:var(--card);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow);margin-bottom:26px}
+  .progress-card .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .progress-card h3{margin:0;font-size:16px}
+  .progress-card .pct{font-weight:800;color:var(--green)}
+  .track{height:16px;background:var(--rose-soft);border-radius:20px;overflow:hidden}
+  .fill{height:100%;background:linear-gradient(90deg,var(--rose),var(--green));border-radius:20px;transition:width .5s ease;width:0}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+
+  .panel{background:var(--card);border-radius:18px;padding:18px 20px 20px;box-shadow:var(--shadow);margin-bottom:22px}
+  .panel h2{margin:0 0 14px;font-size:18px;display:flex;align-items:center;gap:8px}
+  .panel h2 .cnt{margin-left:auto;font-size:13px;color:var(--muted);font-weight:600}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;border-bottom:2px solid var(--line)}
+  td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right;white-space:nowrap}
+  tr.total-row td{font-weight:800;border-top:2px solid var(--line);border-bottom:none;padding-top:11px}
+
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .chip.paid{background:var(--green-soft);color:var(--green)}
+  .chip.no{background:var(--red-soft);color:var(--red)}
+  .chip.part{background:#fff3dc;color:#c9922e}
+
+  .status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px}
+  .dot-yes{background:var(--green)}.dot-no{background:var(--red)}
+
+  ul.checklist{list-style:none;margin:0;padding:0}
+  ul.checklist li{display:flex;align-items:flex-start;gap:9px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:14px}
+  ul.checklist li:last-child{border-bottom:none}
+  ul.checklist li .box{margin-top:1px;font-size:16px}
+  li.done span.txt{text-decoration:line-through;color:var(--muted)}
+  li .price{margin-left:auto;color:var(--muted);font-size:13px;white-space:nowrap;font-weight:600}
+
+  .cat-bar{height:8px;background:var(--rose-soft);border-radius:6px;overflow:hidden;margin-top:5px}
+  .cat-bar > i{display:block;height:100%;background:var(--rose)}
+
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
+  .empty{color:var(--muted);font-size:13px;font-style:italic;padding:8px 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>💐 Смета девичника</h1>
+    <div class="sub" id="subtitle">для Маши 💍</div>
+  </header>
+
+  <div class="warn" id="warnBox" style="display:none">
+    <span>⚠️</span><div id="warnText"></div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpis">
+    <div class="kpi collected"><span class="bar-emoji">💰</span><div class="lbl">Собрано</div><div class="val" id="kpiCollected">0 ₽</div><div class="hint" id="kpiCollectedHint"></div></div>
+    <div class="kpi spent"><span class="bar-emoji">🛍️</span><div class="lbl">Потрачено</div><div class="val" id="kpiSpent">0 ₽</div><div class="hint">уже оплачено</div></div>
+    <div class="kpi left"><span class="bar-emoji">🏦</span><div class="lbl">Остаток в кассе</div><div class="val" id="kpiLeft">0 ₽</div><div class="hint">собрано − потрачено</div></div>
+    <div class="kpi need"><span class="bar-emoji">📝</span><div class="lbl">Ещё нужно</div><div class="val" id="kpiNeed">0 ₽</div><div class="hint" id="kpiNeedHint">на планы</div></div>
+  </div>
+
+  <!-- Прогресс сбора -->
+  <div class="progress-card">
+    <div class="head"><h3>📥 Сбор денег</h3><span class="pct" id="collectPct">0%</span></div>
+    <div class="track"><div class="fill" id="collectFill"></div></div>
+    <div class="hint" id="collectSummary" style="margin-top:8px;color:var(--muted);font-size:13px"></div>
+  </div>
+
+  <!-- Прогноз -->
+  <div class="progress-card" id="forecastCard">
+    <div class="head"><h3>🔮 Прогноз: хватит ли на всё</h3><span class="pct" id="forecastVerdict"></span></div>
+    <div class="track"><div class="fill" id="forecastFill" style="background:linear-gradient(90deg,var(--gold),var(--green))"></div></div>
+    <div class="hint" id="forecastSummary" style="margin-top:8px;color:var(--muted);font-size:13px"></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>👛 Кто скинул <span class="cnt" id="peopleCnt"></span></h2>
+      <table><thead><tr><th>Участница</th><th class="num">Ожидается</th><th class="num">Статус</th></tr></thead>
+        <tbody id="peopleBody"></tbody></table>
+    </div>
+
+    <div class="panel">
+      <h2>📊 Статьи затрат <span class="cnt" id="catCnt"></span></h2>
+      <div id="catBody"></div>
+    </div>
+  </div>
+
+  <!-- Расходы -->
+  <div class="panel">
+    <h2>🧾 Бюджет по пунктам <span class="cnt" id="expCnt"></span></h2>
+    <table><thead><tr><th>Что</th><th>Статья</th><th>Статус</th><th class="num">Сумма</th></tr></thead>
+      <tbody id="expBody"></tbody></table>
+  </div>
+
+  <!-- Что ещё надо -->
+  <div class="panel">
+    <h2>🛒 Что ещё надо купить / оплатить <span class="cnt" id="todoCnt"></span></h2>
+    <ul class="checklist" id="todoBody"></ul>
+  </div>
+
+  <footer>Обновлено: <span id="updated">—</span> · веду смету за тебя 💗</footer>
+</div>
+
+<script>
+/* ====== ДАННЫЕ (редактирует Стефания) ====== */
+const DATA = {
+  updated: "6 июля 2026",
+  collectedTotal: 26751,   // собрано всего (19 000 сумка + 7 751 остаток в кассе)
+  people: [
+    { name:"Лера",        paid:true },
+    { name:"Таня",        paid:true },
+    { name:"Юля",         paid:true },
+    { name:"Наташа",      paid:true },
+    { name:"Варвара Д",   paid:true },
+    { name:"Варя",        paid:false, expected:7000 },
+    { name:"Соня",        paid:false, expected:7000 },
+    { name:"Фатима",      paid:false, expected:5000 },
+    { name:"Саша",        paid:false, expected:5000 },
+    { name:"Аня",         paid:false, expected:5000 },
+    { name:"Даша Шпагина",paid:false, expected:5000 }
+  ],
+  // status: paid=оплачено, part=частично, no=ещё не оплачено
+  expenses: [
+    { title:"Сумка в подарок",     category:"Подарок",   amount:19000, status:"paid" },
+    { title:"Лимузин",             category:"Транспорт", amount:32000, status:"no" },
+    { title:"Реквизит",            category:"Реквизит",  amount:5000,  status:"no" },
+    { title:"Напитки / шоты Маше", category:"Напитки",   amount:2000,  status:"no" },
+    { title:"Закуски",             category:"Еда",       amount:3000,  status:"no" }
+  ],
+  todo: [
+    { title:"Оплатить лимузин",          category:"Транспорт", price:32000, done:false },
+    { title:"Купить реквизит",           category:"Реквизит",  price:5000,  done:false },
+    { title:"Напитки и шоты для Маши",   category:"Напитки",   price:2000,  done:false },
+    { title:"Закуски",                   category:"Еда",       price:3000,  done:false }
+  ]
+};
+/* =========================================== */
+
+const fmt = n => (n||0).toLocaleString('ru-RU') + ' ₽';
+
+function render(){
+  const p = DATA.people, e = DATA.expenses, t = DATA.todo;
+
+  const paidCnt   = p.filter(x=>x.paid).length;
+  const collected = DATA.collectedTotal || 0;
+  const spent     = e.filter(x=>x.status==='paid'||x.status==='part').reduce((s,x)=>s+(x.amount||0),0);
+  const left       = collected - spent;
+  const need      = t.filter(x=>!x.done).reduce((s,x)=>s+(x.price||0),0);
+  const shortfall = need - left;
+
+  document.getElementById('kpiCollected').textContent = fmt(collected);
+  document.getElementById('kpiCollectedHint').textContent = `скинули ${paidCnt} из ${p.length}`;
+  document.getElementById('kpiSpent').textContent = fmt(spent);
+  document.getElementById('kpiLeft').textContent = fmt(left);
+  document.getElementById('kpiNeed').textContent = fmt(need);
+  document.getElementById('kpiNeedHint').textContent = shortfall>0 ? `не хватит ${fmt(shortfall)}` : 'кассы хватает ✅';
+
+  // предупреждение о расхождении
+  const stated = 7751;
+  if (Math.abs(left - stated) > 1){
+    document.getElementById('warnBox').style.display='flex';
+    document.getElementById('warnText').innerHTML =
+      `<b>Проверь цифры:</b> собрано ${fmt(collected)} − потрачено ${fmt(spent)} = <b>${fmt(left)}</b>, а по твоим словам осталось <b>${fmt(stated)}</b>. Расхождение ${fmt(Math.abs(left-stated))} — где-то неточность в сумме сбора или в цене сумки.`;
+  }
+
+  // прогресс сбора — по людям
+  const pct = p.length ? Math.round(paidCnt/p.length*100) : 0;
+  document.getElementById('collectPct').textContent = pct + '%';
+  document.getElementById('collectFill').style.width = Math.min(pct,100) + '%';
+  document.getElementById('collectSummary').textContent =
+    `Скинули ${paidCnt} из ${p.length} · ждём ещё ${p.length-paidCnt} ${p.length-paidCnt===1?'человека':'человек'}`;
+
+  // ожидаемые взносы от тех, кто ещё не скинул
+  const pendingKnown = p.filter(x=>!x.paid && x.expected).reduce((s,x)=>s+x.expected,0);
+  const pendingUnknown = p.filter(x=>!x.paid && !x.expected).length;
+  const projectedTotal = collected + pendingKnown; // без неизвестных
+
+  // кто скинул
+  const pb = document.getElementById('peopleBody');
+  document.getElementById('peopleCnt').textContent = `${paidCnt}/${p.length}`;
+  pb.innerHTML = p.map(x=>{
+    const exp = x.paid ? '<span style="color:var(--green)">✓</span>'
+              : x.expected ? fmt(x.expected)
+              : '<span style="color:var(--muted)">?</span>';
+    return `<tr><td><span class="status-dot ${x.paid?'dot-yes':'dot-no'}"></span>${x.name}</td>
+    <td class="num">${exp}</td>
+    <td class="num">${x.paid?'<span class="chip paid">скинула</span>':'<span class="chip no">ждём</span>'}</td></tr>`;
+  }).join('')
+    + `<tr class="total-row"><td>Собрано сейчас</td><td class="num"></td><td class="num">${fmt(collected)}</td></tr>`
+    + `<tr class="total-row" style="border-top:none;padding-top:2px"><td style="font-weight:600;color:var(--muted)">Ждём ещё</td><td class="num"></td><td class="num" style="color:var(--gold)">+${fmt(pendingKnown)}${pendingUnknown?' + ?':''}</td></tr>`;
+
+  // статьи затрат (из бюджета по пунктам)
+  const cats = {};
+  e.forEach(x=>{ const c=x.category||'Прочее'; cats[c]=(cats[c]||0)+(x.amount||0); });
+  const catArr = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const catMax = catArr.length ? catArr[0][1] : 1;
+  const cb = document.getElementById('catBody');
+  document.getElementById('catCnt').textContent = catArr.length || '';
+  cb.innerHTML = catArr.map(([c,v])=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:14px">
+        <span>${c}</span><span style="font-weight:700">${fmt(v)}</span></div>
+      <div class="cat-bar"><i style="width:${Math.round(v/catMax*100)}%"></i></div>
+    </div>`).join('');
+
+  // бюджет по пунктам
+  const eb = document.getElementById('expBody');
+  document.getElementById('expCnt').textContent = e.length || '';
+  const chip = s => s==='paid'?'<span class="chip paid">оплачено</span>'
+                  : s==='part'?'<span class="chip part">частично</span>'
+                  : '<span class="chip no">не оплачено</span>';
+  const totalBudget = e.reduce((s,x)=>s+(x.amount||0),0);
+  eb.innerHTML = e.map(x=>`
+    <tr><td>${x.title}</td><td>${x.category||'—'}</td><td>${chip(x.status)}</td>
+    <td class="num">${fmt(x.amount)}</td></tr>`).join('')
+    + `<tr class="total-row"><td colspan="3">Итого бюджет</td><td class="num">${fmt(totalBudget)}</td></tr>`;
+
+  // прогноз: хватит ли собранного + ожидаемого на весь бюджет
+  const totalBudgetAll = e.reduce((s,x)=>s+(x.amount||0),0); // сумка + планы
+  const coverage = totalBudgetAll>0 ? Math.round(projectedTotal/totalBudgetAll*100) : 0;
+  const gap = totalBudgetAll - projectedTotal;
+  document.getElementById('forecastFill').style.width = Math.min(coverage,100)+'%';
+  document.getElementById('forecastVerdict').textContent = coverage+'%';
+  document.getElementById('forecastVerdict').style.color = gap<=0 ? 'var(--green)' : 'var(--red)';
+  let fSummary = `Когда все скинут → в кассе будет <b>${fmt(projectedTotal)}</b>${pendingUnknown?' (+ взнос Даши)':''}. `
+    + `Весь бюджет девичника — <b>${fmt(totalBudgetAll)}</b>. `;
+  if (gap<=0) fSummary += `Хватает с запасом ${fmt(-gap)} 🎉`;
+  else if (pendingUnknown) fSummary += `Не хватает <b>${fmt(gap)}</b> — как раз примерно взнос Даши. Если она скинет ~${fmt(gap)}+, всё сходится.`;
+  else fSummary += `Не хватает <b>${fmt(gap)}</b> ⚠️ — надо либо добрать, либо ужать бюджет.`;
+  document.getElementById('forecastSummary').innerHTML = fSummary;
+
+  // что ещё надо
+  const tb = document.getElementById('todoBody');
+  const todoLeft = t.filter(x=>!x.done).length;
+  document.getElementById('todoCnt').textContent = `${todoLeft} осталось`;
+  tb.innerHTML = t.map(x=>`
+    <li class="${x.done?'done':''}"><span class="box">${x.done?'✅':'⬜'}</span>
+    <span class="txt">${x.title}</span>${x.price?`<span class="price">${fmt(x.price)}</span>`:''}</li>`).join('');
+
+  document.getElementById('updated').textContent = DATA.updated;
+}
+render();
+</script>
+</body>
+</html>
