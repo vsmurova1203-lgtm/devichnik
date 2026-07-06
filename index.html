@@ -87,10 +87,6 @@
     <div class="sub" id="subtitle">для Маши 💍</div>
   </header>
 
-  <div class="warn" id="warnBox" style="display:none">
-    <span>⚠️</span><div id="warnText"></div>
-  </div>
-
   <!-- KPI -->
   <div class="kpis">
     <div class="kpi collected"><span class="bar-emoji">💰</span><div class="lbl">Собрано</div><div class="val" id="kpiCollected">0 ₽</div><div class="hint" id="kpiCollectedHint"></div></div>
@@ -195,14 +191,6 @@ function render(){
   document.getElementById('kpiLeft').textContent = fmt(left);
   document.getElementById('kpiNeed').textContent = fmt(need);
   document.getElementById('kpiNeedHint').textContent = shortfall>0 ? `не хватит ${fmt(shortfall)}` : 'кассы хватает ✅';
-
-  // предупреждение о расхождении
-  const stated = 7751;
-  if (Math.abs(left - stated) > 1){
-    document.getElementById('warnBox').style.display='flex';
-    document.getElementById('warnText').innerHTML =
-      `<b>Проверь цифры:</b> собрано ${fmt(collected)} − потрачено ${fmt(spent)} = <b>${fmt(left)}</b>, а по твоим словам осталось <b>${fmt(stated)}</b>. Расхождение ${fmt(Math.abs(left-stated))} — где-то неточность в сумме сбора или в цене сумки.`;
-  }
 
   // прогресс сбора — по людям
   const pct = p.length ? Math.round(paidCnt/p.length*100) : 0;
