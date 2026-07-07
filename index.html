@@ -141,7 +141,7 @@
 <script>
 /* ====== ДАННЫЕ (редактирует Стефания) ====== */
 const DATA = {
-  updated: "6 июля 2026",
+  updated: "7 июля 2026",
   collectedTotal: 39751,   // 26 751 + Аня 6 000 + Варя 7 000
   people: [
     { name:"Лера",        paid:true },
@@ -158,17 +158,19 @@ const DATA = {
   ],
   // status: paid=оплачено, part=частично, no=ещё не оплачено
   expenses: [
-    { title:"Сумка в подарок",     category:"Подарок",   amount:19000, status:"paid" },
-    { title:"Лимузин",             category:"Транспорт", amount:32000, status:"no" },
-    { title:"Реквизит",            category:"Реквизит",  amount:5000,  status:"no" },
-    { title:"Напитки / шоты Маше", category:"Напитки",   amount:2000,  status:"no" },
-    { title:"Закуски",             category:"Еда",       amount:3000,  status:"no" }
+    { title:"Сумка в подарок",                  category:"Подарок",   amount:19000, status:"paid" },
+    { title:"Лимузин (4 часа)",                 category:"Транспорт", amount:5000,  status:"part", paidAmount:2000 },
+    { title:"Реквизит",                         category:"Реквизит",  amount:5000,  status:"no" },
+    { title:"Напитки / шоты для Маши",          category:"Напитки",   amount:2000,  status:"no" },
+    { title:"Напитки в лимузин (алко+безалко)", category:"Напитки",   amount:8500,  status:"no" },
+    { title:"Еда и закуски",                    category:"Еда",       amount:4500,  status:"no" }
   ],
   todo: [
-    { title:"Оплатить лимузин",          category:"Транспорт", price:32000, done:false },
-    { title:"Купить реквизит",           category:"Реквизит",  price:5000,  done:false },
-    { title:"Напитки и шоты для Маши",   category:"Напитки",   price:2000,  done:false },
-    { title:"Закуски",                   category:"Еда",       price:3000,  done:false }
+    { title:"Доплатить лимузин (осталось)",              category:"Транспорт", price:3000, done:false },
+    { title:"Купить реквизит",                           category:"Реквизит",  price:5000, done:false },
+    { title:"Напитки и шоты для Маши",                   category:"Напитки",   price:2000, done:false },
+    { title:"Напитки в лимузин: игристое, вино, вода, безалко", category:"Напитки", price:8500, done:false },
+    { title:"Еда и закуски",                             category:"Еда",       price:4500, done:false }
   ]
 };
 /* =========================================== */
@@ -180,7 +182,7 @@ function render(){
 
   const paidCnt   = p.filter(x=>x.paid).length;
   const collected = DATA.collectedTotal || 0;
-  const spent     = e.filter(x=>x.status==='paid'||x.status==='part').reduce((s,x)=>s+(x.amount||0),0);
+  const spent     = e.reduce((s,x)=> s + (x.status==='paid' ? (x.amount||0) : x.status==='part' ? (x.paidAmount||0) : 0), 0);
   const left       = collected - spent;
   const need      = t.filter(x=>!x.done).reduce((s,x)=>s+(x.price||0),0);
   const shortfall = need - left;
@@ -235,12 +237,12 @@ function render(){
   // бюджет по пунктам
   const eb = document.getElementById('expBody');
   document.getElementById('expCnt').textContent = e.length || '';
-  const chip = s => s==='paid'?'<span class="chip paid">оплачено</span>'
-                  : s==='part'?'<span class="chip part">частично</span>'
+  const chip = x => x.status==='paid'?'<span class="chip paid">оплачено</span>'
+                  : x.status==='part'?`<span class="chip part">оплачено ${fmt(x.paidAmount)} из ${fmt(x.amount)}</span>`
                   : '<span class="chip no">не оплачено</span>';
   const totalBudget = e.reduce((s,x)=>s+(x.amount||0),0);
   eb.innerHTML = e.map(x=>`
-    <tr><td>${x.title}</td><td>${x.category||'—'}</td><td>${chip(x.status)}</td>
+    <tr><td>${x.title}</td><td>${x.category||'—'}</td><td>${chip(x)}</td>
     <td class="num">${fmt(x.amount)}</td></tr>`).join('')
     + `<tr class="total-row"><td colspan="3">Итого бюджет</td><td class="num">${fmt(totalBudget)}</td></tr>`;
 
