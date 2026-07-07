@@ -142,7 +142,7 @@
 /* ====== ДАННЫЕ (редактирует Стефания) ====== */
 const DATA = {
   updated: "7 июля 2026",
-  collectedTotal: 39751,   // 26 751 + Аня 6 000 + Варя 7 000
+  collectedTotal: 46751,   // 26 751 + Аня 6 000 + Варя 7 000 + Соня 7 000
   people: [
     { name:"Лера",        paid:true },
     { name:"Таня",        paid:true },
@@ -150,7 +150,7 @@ const DATA = {
     { name:"Наташа",      paid:true },
     { name:"Варвара Д",   paid:true },
     { name:"Варя",        paid:true },
-    { name:"Соня",        paid:false, expected:7000 },
+    { name:"Соня",        paid:true },
     { name:"Фатима",      paid:false, expected:5000 },
     { name:"Саша",        paid:false, expected:5000 },
     { name:"Аня",         paid:true },
@@ -159,14 +159,14 @@ const DATA = {
   // status: paid=оплачено, part=частично, no=ещё не оплачено
   expenses: [
     { title:"Сумка в подарок",                  category:"Подарок",   amount:19000, status:"paid" },
-    { title:"Лимузин (4 часа)",                 category:"Транспорт", amount:5000,  status:"part", paidAmount:2000 },
+    { title:"Лимузин (4 часа)",                 category:"Транспорт", amount:32000, status:"part", paidAmount:2000 },
     { title:"Реквизит",                         category:"Реквизит",  amount:5000,  status:"no" },
     { title:"Напитки / шоты для Маши",          category:"Напитки",   amount:2000,  status:"no" },
     { title:"Напитки в лимузин (алко+безалко)", category:"Напитки",   amount:8500,  status:"no" },
     { title:"Еда и закуски",                    category:"Еда",       amount:4500,  status:"no" }
   ],
   todo: [
-    { title:"Доплатить лимузин (осталось)",              category:"Транспорт", price:3000, done:false },
+    { title:"Доплатить лимузин (осталось)",              category:"Транспорт", price:30000, done:false },
     { title:"Купить реквизит",                           category:"Реквизит",  price:5000, done:false },
     { title:"Напитки и шоты для Маши",                   category:"Напитки",   price:2000, done:false },
     { title:"Напитки в лимузин: игристое, вино, вода, безалко", category:"Напитки", price:8500, done:false },
@@ -185,14 +185,21 @@ function render(){
   const spent     = e.reduce((s,x)=> s + (x.status==='paid' ? (x.amount||0) : x.status==='part' ? (x.paidAmount||0) : 0), 0);
   const left       = collected - spent;
   const need      = t.filter(x=>!x.done).reduce((s,x)=>s+(x.price||0),0);
-  const shortfall = need - left;
+  // ожидаемые взносы от тех, кто ещё не скинул
+  const pendingKnown = p.filter(x=>!x.paid && x.expected).reduce((s,x)=>s+x.expected,0);
+  const pendingUnknown = p.filter(x=>!x.paid && !x.expected).length;
+  const projectedTotal = collected + pendingKnown; // без неизвестных
+  // нехватка с учётом будущих взносов: нужно оплатить − (в кассе сейчас + ещё соберём)
+  const shortfall = need - (left + pendingKnown);
 
   document.getElementById('kpiCollected').textContent = fmt(collected);
   document.getElementById('kpiCollectedHint').textContent = `скинули ${paidCnt} из ${p.length}`;
   document.getElementById('kpiSpent').textContent = fmt(spent);
   document.getElementById('kpiLeft').textContent = fmt(left);
   document.getElementById('kpiNeed').textContent = fmt(need);
-  document.getElementById('kpiNeedHint').textContent = shortfall>0 ? `не хватит ${fmt(shortfall)}` : 'кассы хватает ✅';
+  document.getElementById('kpiNeedHint').textContent = shortfall>0
+    ? `не хватит ${fmt(shortfall)}${pendingUnknown?' (+ взнос Даши)':''}`
+    : 'хватает с учётом взносов ✅';
 
   // прогресс сбора — по людям
   const pct = p.length ? Math.round(paidCnt/p.length*100) : 0;
@@ -200,11 +207,6 @@ function render(){
   document.getElementById('collectFill').style.width = Math.min(pct,100) + '%';
   document.getElementById('collectSummary').textContent =
     `Скинули ${paidCnt} из ${p.length} · ждём ещё ${p.length-paidCnt} ${p.length-paidCnt===1?'человека':'человек'}`;
-
-  // ожидаемые взносы от тех, кто ещё не скинул
-  const pendingKnown = p.filter(x=>!x.paid && x.expected).reduce((s,x)=>s+x.expected,0);
-  const pendingUnknown = p.filter(x=>!x.paid && !x.expected).length;
-  const projectedTotal = collected + pendingKnown; // без неизвестных
 
   // кто скинул
   const pb = document.getElementById('peopleBody');
